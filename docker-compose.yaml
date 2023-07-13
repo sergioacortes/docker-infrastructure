@@ -1,0 +1,178 @@
+version: '3.4'
+
+services:
+
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    profiles: ["infrastructure", "infrastructure-monitoring", "infrastructure-storage"]
+    restart: on-failure
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock 
+      - portainer_data:/data 
+    ports:
+      - 8000:8000 
+      - 9443:9443  
+    networks:
+      - localnet
+      
+  mongodb:
+    container_name: mongodb
+    image: mongo:${MONGO_VERSION:?err}  
+    profiles: ["infrastructure", "infrastructure-monitoring", "infrastructure-storage"]
+    command: mongod --replSet rs-local
+    restart: on-failure
+    volumes:
+      - ./mongodb/mongodb.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    environment:
+      - MONGO_PORT=${MONGO_PORT:?err}
+    ports:
+      - ${MONGO_PORT:?err}:${MONGO_PORT:?err}
+    networks:
+      - localnet
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.10.18-management
+    profiles: ["infrastructure", "infrastructure-newpol", "infrastructure-monitoring", "infrastructure-storage"]
+    command: rabbitmq-server
+    restart: on-failure
+    hostname: rabbitmq
+    volumes:
+        - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+        - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+        - rabbitmq_lib:/var/lib/rabbitmq
+        - rabbitmq_log:/var/log/rabbitmq
+    environment:
+      RABBITMQ_USERNAME: npuser
+      RABBITMQ_DEFAULT_USER: npuser
+      RABBITMQ_PASSOWRD: np1234
+      RABBITMQ_DEFAULT_PASS: np1234
+      RABBITMQ_VHOST: /
+    ports:
+      - ${RABBIT_PORT_SERVICE}:${RABBIT_PORT_SERVICE}
+      - ${RABBIT_PORT_WEB}:${RABBIT_PORT_WEB}
+    networks:
+      - localnet
+
+  redis:
+    container_name: redis
+    image: redis
+    profiles: ["infrastructure", "infrastructure-newpol", "infrastructure-monitoring", "infrastructure-storage"]
+    restart: on-failure
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+        - redis_data:/data
+    ports:
+      - 6379:6379
+    networks:
+      - localnet
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:${OTELCOLLECTOR_VERSION}
+    profiles: ["infrastructure-monitoring"]
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    restart: on-failure
+    volumes:
+      - ./monitoring/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - otelcollector_log:/etc/output:rw # Store the logs
+    ports:
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "4317:4317"   # OTLP gRPC receiver
+    networks:
+      - localnet
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:${PROMETHEUS_VERSION}
+    profiles: ["infrastructure-monitoring"]
+    restart: on-failure
+    volumes:
+      - ./monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9091:9090"
+    networks:
+      - localnet
+
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:${TEMPO_VERSION}
+    profiles: ["infrastructure-monitoring"]
+    command: ["-config.file=/etc/tempo.yaml"]
+    restart: on-failure
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./monitoring/tempo/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - 3200:3200  # tempo
+      - 4007:4317  # otlp grpc
+    networks:
+      - localnet
+
+  loki:
+    container_name: loki
+    image: grafana/loki:${LOKI_VERSION}
+    profiles: ["infrastructure-monitoring"]
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: on-failure
+    volumes:
+      - /etc/localtime:/etc/localtime:ro      
+      - ./monitoring/loki/loki.yaml:/etc/loki/local-config.yaml
+    ports:
+      - 3100:3100
+    networks:
+      - localnet
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:${GRAFANA_VERSION}
+    profiles: ["infrastructure-monitoring"]
+    restart: on-failure
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - 3001:3000
+    networks:
+      - localnet
+
+  azurite:
+    container_name: azurite
+    image: mcr.microsoft.com/azure-storage/azurite
+    profiles: ["infrastructure-storage"]
+    hostname: azurite
+    restart: on-failure
+    volumes:
+       - azurite_data:/data
+    ports:
+      - 10000:10000
+      - 10001:10001
+      - 10002:10002
+    networks:
+      - localnet
+
+volumes:
+  redis_data:
+  mongodb_data:    
+  mongodb_config:
+  rabbitmq_lib:
+  rabbitmq_log:
+  portainer_data:
+  otelcollector_log:
+  azurite_data:
+  
+networks:
+  localnet:    
+    driver: bridge
+  infrastructure_localnet:
+    external: true
