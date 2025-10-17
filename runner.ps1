@@ -39,14 +39,14 @@ Function Run-DockerComposeDown {
 while ($option -ne 0) {
 
     Write-Host '
-    Utilities
+    Select an option
+
     1.- infrastructure
     2.- infrastructure-messaging
     3.- Infrastructure-microsoft
     4.- Infrastructure-mongodb
     5.- Infrastructure-monitoring
     
-    Docker compose DOWN:
     51.- infrastructure
     52.- infrastructure-messaging
     53.- Infrastructure-microsoft
@@ -72,6 +72,22 @@ while ($option -ne 0) {
         }
         5 {
             Run-DockerComposeUp -profileName "infrastructure-monitoring"
+        }
+
+        51 {
+            Run-DockerComposeDown -profileName "infrastructure"
+        }
+        52 {
+            Run-DockerComposeDown -profileName "infrastructure-messaging"
+        }
+        53 {
+            Run-DockerComposeDown -profileName "infrastructure-microsoft"
+        }
+        54 {
+            Run-DockerComposeDown -profileName "infrastructure-mongodb"
+        }
+        55 {
+            Run-DockerComposeDown -profileName "infrastructure-monitoring"
         }
 
         0 {
