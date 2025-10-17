@@ -31,10 +31,10 @@ services:
         - rabbitmq_lib:/var/lib/rabbitmq
         - rabbitmq_log:/var/log/rabbitmq
     environment:
-      RABBITMQ_USERNAME: application_user
-      RABBITMQ_DEFAULT_USER: application_user
-      RABBITMQ_PASSOWRD: np1234
-      RABBITMQ_DEFAULT_PASS: np1234
+      RABBITMQ_USERNAME: app
+      RABBITMQ_DEFAULT_USER: app
+      RABBITMQ_PASSOWRD: ${PASSWORD}
+      RABBITMQ_DEFAULT_PASS: ${PASSWORD}
       RABBITMQ_VHOST: /
     ports:
       - 5672:5672
@@ -54,7 +54,7 @@ services:
       - 14330:1433
     environment:
       ACCEPT_EULA: Y
-      MSSQL_SA_PASSWORD: WoltersKluwer.Password.1234
+      MSSQL_SA_PASSWORD: ${PASSWORD}
       MSSQL_PID: Standard
       MSSQL_BACKUP_DIR: /var/opt/mssql/backups
       MSSQL_LCID: 1033
