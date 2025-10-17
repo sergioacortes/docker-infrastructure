@@ -26,8 +26,8 @@ print_menu() {
 
 docker_compose_up() {
    
-   local docker_compose="$base_path/docker-compose.yaml"
-   local docker_compose_override="$base_path/docker-compose.override.yaml"
+    local docker_compose="$base_path/docker-compose.yaml"
+    local docker_compose_override="$base_path/docker-compose.override.yaml"
 
     local profile=$1
     local domain=$2

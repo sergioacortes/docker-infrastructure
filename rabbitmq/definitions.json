@@ -14,7 +14,7 @@
             "limits": {}
         },
         {
-            "name": "npuser",
+            "name": "application_user",
             "password_hash": "8Tsj9/MG+x9I9eHc/UyTPXeSZkIprduRFEW92HnGXQFju8Kh",
             "hashing_algorithm": "rabbit_password_hashing_sha256",
             "tags": [
@@ -37,7 +37,7 @@
             "read": ".*"
         },
         {
-            "user": "npuser",
+            "user": "application_user",
             "vhost": "/",
             "configure": ".*",
             "write": ".*",
